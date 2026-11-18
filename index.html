@@ -637,7 +637,7 @@
     <select id="kycLevel">
       <option value="A1">A1 - Beginner (झिझक महसूस होती है / Need basic practice)</option>
       <option value="A2">A2 - Intermediate (टूटी-फूटी अंग्रेजी / Understanding but slow speech)</option>
-      <option value="B1">B1 - Advanced (अच्छी पकड़ / Fluent in daily conversations)</option>
+      <option value="B1">B1 - Advanced (अच्छी पकड़ / Fluent in daily conversations)</option>
       <option value="B2">B2 - Expert (Mastery &amp; Professional Level)</option>
     </select>
 
@@ -766,81 +766,53 @@
     }
   }
 
-  /* -------------------- STANDALONE WEB API PROXY POLYFILL WITH 15S TIMEOUT -------------------- */
+  /* -------------------- STANDALONE WEB API PROXY POLYFILL WITH 25S TIMEOUT -------------------- */
   function createGoogleScriptRunProxy() {
-    function Runner(successHandler, failureHandler) {
-      this._success = successHandler || null;
-      this._failure = failureHandler || null;
-    }
-
-    Runner.prototype.withSuccessHandler = function(fn) {
-      return new Runner(fn, this._failure);
-    };
-
-    Runner.prototype.withFailureHandler = function(fn) {
-      return new Runner(this._success, fn);
-    };
-
-    var proxyTarget = new Runner();
-
-    return new Proxy(proxyTarget, {
-      get: function(target, prop) {
-        if (prop === 'withSuccessHandler') {
-          return function(fn) {
-            return new Runner(fn, target._failure);
-          };
-        }
-        if (prop === 'withFailureHandler') {
-          return function(fn) {
-            return new Runner(target._success, fn);
-          };
-        }
-
-        return function() {
-          var args = Array.prototype.slice.call(arguments);
-
-          if (typeof google !== 'undefined' && google.script && google.script.run && (BACKEND_API_URL === "YOUR_APPS_SCRIPT_EXEC_URL" || !BACKEND_API_URL)) {
-            var runner = google.script.run;
-            if (target._success) runner = runner.withSuccessHandler(target._success);
-            if (target._failure) runner = runner.withFailureHandler(target._failure);
-            if (typeof runner[prop] === 'function') {
-              return runner[prop].apply(runner, args);
-            }
+    function makeRunner(successHandler, failureHandler) {
+      return new Proxy({}, {
+        get: function(target, prop) {
+          if (prop === 'withSuccessHandler') {
+            return function(fn) { return makeRunner(fn, failureHandler); };
           }
+          if (prop === 'withFailureHandler') {
+            return function(fn) { return makeRunner(successHandler, fn); };
+          }
+          return function() {
+            var args = Array.prototype.slice.call(arguments);
+            var payload = { action: prop, args: args };
+            var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+            var timeoutId = controller ? setTimeout(function() { controller.abort(); }, 25000) : null;
 
-          var payload = { action: prop, args: args };
-
-          var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
-          var timeoutId = controller ? setTimeout(function() { controller.abort(); }, 15000) : null;
-
-          fetch(BACKEND_API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify(payload),
-            signal: controller ? controller.signal : undefined
-          })
-          .then(function(response) {
-            if (timeoutId) clearTimeout(timeoutId);
-            return response.json();
-          })
-          .then(function(json) {
-            if (json && json.ok) {
-              if (target._success) target._success(json.data);
-            } else {
-              var err = new Error((json && json.error) ? json.error : 'API execution error');
-              if (target._failure) target._failure(err);
-              else console.error('API Error:', err);
-            }
-          })
-          .catch(function(err) {
-            if (timeoutId) clearTimeout(timeoutId);
-            var errObj = (err && err.name === 'AbortError') ? new Error('Backend request timed out (15s limit reached).') : err;
-            if (target._failure) target._failure(errObj);
-            else console.error('Network or CORS error:', errObj);
-          });
-        };
-      }
-    });
+            fetch(BACKEND_API_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify(payload),
+              signal: controller ? controller.signal : undefined
+            })
+            .then(function(response) {
+              if (timeoutId) clearTimeout(timeoutId);
+              return response.json();
+            })
+            .then(function(json) {
+              if (json && json.ok) {
+                if (successHandler) successHandler(json.data);
+              } else {
+                var err = new Error((json && json.error) ? json.error : 'API execution error');
+                if (failureHandler) failureHandler(err);
+                else console.error('API Error:', err);
+              }
+            })
+            .catch(function(err) {
+              if (timeoutId) clearTimeout(timeoutId);
+              var errObj = (err && err.name === 'AbortError') ? new Error('Backend request timed out (25s).') : err;
+              if (failureHandler) failureHandler(errObj);
+              else console.error('Network or CORS error:', errObj);
+            });
+          };
+        }
+      });
+    }
+    return makeRunner(null, null);
   }
 
   if (typeof google === 'undefined' || !google.script || !google.script.run) {
@@ -1442,7 +1414,7 @@
       attendanceType: 'regular'
     };
 
-  btn.disabled = true;
+    btn.disabled = true;
     btn.textContent = 'Checking...';
     google.script.run
       .withSuccessHandler(function(res) {
