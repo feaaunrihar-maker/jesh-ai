@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="hi">
 <head>
   <meta charset="UTF-8">
@@ -2528,6 +2528,5 @@
 
 <!-- JESH_AUTO_PLUGINS_START -->
 <!-- JESH_AUTO_PLUGINS_END -->
-<script>(function(){function inject(){var b=document.getElementById("adminTopHealthBanner");if(!b||document.getElementById("jeshArchitectBox"))return;var d=document.createElement("div");d.id="jeshArchitectBox";d.style.cssText="background:#1e1b4b;color:#fff;padding:16px;border-radius:12px;margin-bottom:18px;border:1px solid #6366f1;";d.innerHTML="<h4 style='margin:0 0 8px 0;'>🛈️ AI System Architect (Atmanirbhar Updates)</h4><div style='display:flex;gap:8px;flex-wrap:wrap;'><input id='architectPromptInput' placeholder='New feature ya change likhein...' style='flex:1;background:#0f172a;color:#fff;border:1px solid #4f46e5;'><button class='btn btn-success' id='btnArchitectPush' style='width:auto;' onclick='runGithubArchitectPush()'>😀 Push to GitHub</button><button class='btn' style='background:#dc2626;color:#fff;width:auto;' onclick='runGithubUndo()'>↩ Undo</button></div>";b.parentNode.insertBefore(d,b.nextSibling);}function count(){var sec=40;var t=document.createElement("div");t.style.cssText="position:fixed;bottom:20px;right:20px;background:#0f172a;color:#fff;padding:14px;border-radius:12px;z-index:999999;border:1px solid #3b82f6;";t.innerHTML="GitHub live ho raha hai: <b id='jeshSec'>40</b>s";document.body.appendChild(t);var iv=setInterval(function(){sec--;var s=document.getElementById("jeshSec");if(s)s.textContent=sec;if(sec<=0){clearInterval(iv);window.location.href=window.location.href.split("?")[0].split("#")[0]+"?v="+Date.now()+(document.location.hash||"");}},1000);}window.runGithubArchitectPush=function(){var i=document.getElementById("architectPromptInput");var p=i?i.value.trim():"";if(!p)return alert("Pehle prompt likhein!");var b=document.getElementById("btnArchitectPush");if(b)b.disabled=true;google.script.run.withSuccessHandler(function(r){if(b)b.disabled=false;alert(r?.r.msg:"Done");if(r&&r.ok){count();}}).architectBuildAndPushToGithub(p);};window.runGithubUndo=function(){if(!confirm("Undo last Github update?"))return;google.script.run.withSuccessHandler(function(r){alert(r?.r.msg:"Undo Done");if(r&&r.ok)count();}).architectUndoLastGithubPush();};setInterval(inject,1000);})();</script>
 </body>
 </html>
