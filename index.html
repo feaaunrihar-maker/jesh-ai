@@ -188,6 +188,27 @@
     .forms-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 12px; }
     .form-card { background: #fff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 14px; text-align: left; transition: 0.15s; }
     .form-card:hover { border-color: var(--primary); background: #f8fafc; }
+ /* Mobile Responsive Table & Header Fix */
+@media (max-width: 640px) {
+  .msg-bubble table, .ai-content table, table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: normal;
+  }
+  .msg-bubble th, .msg-bubble td, table th, table td {
+    min-width: 120px;
+    word-break: normal !important;
+    overflow-wrap: break-word;
+  }
+  header, .top-bar, .navbar {
+    flex-wrap: wrap;
+    padding: 6px 8px !important;
+    gap: 4px;
+  }
+}
+    
   </style>
 </head>
 <body>
