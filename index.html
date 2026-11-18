@@ -109,7 +109,7 @@
     .btn-outline { background: #fff; border: 1.5px solid var(--border); color: var(--text); }
     .btn-sm { padding: 4px 8px; font-size: 0.78rem; border-radius: 8px; }
     .hidden { display: none !important; }
-    .badge { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 0.76rem; font-weight: 700; }
+    .badge { display: inline-block; padding: 3px 99px; border-radius: 999px; font-size: 0.76rem; font-weight: 700; }
     .badge-blue { background: #dbeafe; color: #1d4ed8; }
     .badge-green { background: #dcfce7; color: #15803d; }
     .badge-red { background: #fee2e2; color: #dc2626; }
@@ -692,8 +692,8 @@
         return function() {
           var args = Array.prototype.slice.call(arguments);
 
-          if (typeof google !== 'undefined' && google.script && google.script.run && (BACKEND_API_URL === "YOUR_APPS_SCRIPT_EXEC_URL" || !BACKEND_API_URL)) {
-            var runner = google.script.run;
+          if (typeof [link removed] !== 'undefined' && [link removed].script && [link removed].script.run && (BACKEND_API_URL === "YOUR_APPS_SCRIPT_EXEC_URL" || !BACKEND_API_URL)) {
+            var runner = [link removed].script.run;
             if (target._success) runner = runner.withSuccessHandler(target._success);
             if (target._failure) runner = runner.withFailureHandler(target._failure);
             if (typeof runner[prop] === 'function') {
@@ -727,12 +727,12 @@
     });
   }
 
-  if (typeof google === 'undefined' || !google.script || !google.script.run) {
-    google = google || {};
-    google.script = google.script || {};
-    google.script.run = createGoogleScriptRunProxy();
+  if (typeof [link removed] === 'undefined' || ![link removed].script || ![link removed].script.run) {
+    [link removed] = [link removed] || {};
+    [link removed].script = [link removed].script || {};
+    [link removed].script.run = createGoogleScriptRunProxy();
   } else if (typeof BACKEND_API_URL !== 'undefined' && BACKEND_API_URL && BACKEND_API_URL !== "YOUR_APPS_SCRIPT_EXEC_URL") {
-    google.script.run = createGoogleScriptRunProxy();
+    [link removed].script.run = createGoogleScriptRunProxy();
   }
 
   var STATE = {
@@ -1280,7 +1280,9 @@
       if (el) el.classList.toggle('active', r === role);
     });
     var lbl = document.getElementById('authSecretLabel');
-    lbl.textContent = (role === 'student') ? 'FEA Student ID (आपकी ID)' : 'Password';
+    if (lbl) {
+      lbl.textContent = (role === 'student') ? 'FEA Student ID (आपकी ID)' : 'Password';
+    }
   }
 
   function handleAuth() {
@@ -2254,6 +2256,54 @@
   function escapeJsString(str) {
     return String(str||'').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, '\\n');
   }
+
+  /* ---------------- EXPLICIT WINDOW BINDINGS FOR STANDALONE & GITHUB PAGES ---------------- */
+  window.switchAuthRole = switchAuthRole;
+  window.handleAuth = handleAuth;
+  window.handleLogin = handleAuth;
+  window.logoutUser = logoutUser;
+  window.switchViewMode = switchViewMode;
+  window.toggleSidebar = toggleSidebar;
+  window.startNewActiveChat = startNewActiveChat;
+  window.reloadChatSession = reloadChatSession;
+  window.deleteChatSession = deleteChatSession;
+  window.sendStarterPrompt = sendStarterPrompt;
+  window.sendTeacherStarterPrompt = sendTeacherStarterPrompt;
+  window.askForMoreDetail = askForMoreDetail;
+  window.handleInputKey = handleInputKey;
+  window.sendMentorQuery = sendMentorQuery;
+  window.sendTeacherAiWorkspaceQuery = sendTeacherAiWorkspaceQuery;
+  window.startVoiceInput = startVoiceInput;
+  window.speakText = speakText;
+  window.copyText = copyText;
+  window.openFeedbackModal = openFeedbackModal;
+  window.closeFeedbackModal = closeFeedbackModal;
+  window.submitFeedbackUI = submitFeedbackUI;
+  window.runSystemHealthCheckUI = runSystemHealthCheckUI;
+  window.closeHealthModal = closeHealthModal;
+  window.switchStaffTab = switchStaffTab;
+  window.runMasterAiAnalystQuery = runMasterAiAnalystQuery;
+  window.runUniversalSearch = runUniversalSearch;
+  window.loadDashboardDataBackground = loadDashboardDataBackground;
+  window.loadAgentControlPlaneUI = loadAgentControlPlaneUI;
+  window.triggerAgentRun = triggerAgentRun;
+  window.loadProgramKnowledgeUI = loadProgramKnowledgeUI;
+  window.savePkItemUI = savePkItemUI;
+  window.submitBuilderKnowledgeForm = submitBuilderKnowledgeForm;
+  window.submitBuilderChatCommandForm = submitBuilderChatCommandForm;
+  window.approveAndAutoApply = approveAndAutoApply;
+  window.openAddProviderModal = openAddProviderModal;
+  window.openEditProviderModal = openEditProviderModal;
+  window.closeProviderModal = closeProviderModal;
+  window.saveProviderModal = saveProviderModal;
+  window.deleteProvider = deleteProvider;
+  window.addDynamicNoticeCardUI = addDynamicNoticeCardUI;
+  window.deleteNoticeCardUI = deleteNoticeCardUI;
+  window.saveMasterPromptsUI = saveMasterPromptsUI;
+  window.syncSettingsSheetUI = syncSettingsSheetUI;
+  window.openCredModal = openCredModal;
+  window.closeCredModal = closeCredModal;
+  window.saveCredentialReset = saveCredentialReset;
 </script>
 </body>
 </html>
