@@ -1442,23 +1442,32 @@
       attendanceType: 'regular'
     };
 
-    btn.disabled = true;
-    google.script.run.withSuccessHandler(function(res) {
-      btn.disabled = false;
-      if (!res.ok) return alert(res.msg);
-      if (res.needSignup) {
-        STATE.needSignup = true;
-        document.getElementById('signupExtraBox').classList.remove('hidden');
-        document.getElementById('studentOnlyFields').classList.toggle('hidden', STATE.role !== 'student');
-        return;
-      }
-      STATE.user = res.user;
-      STATE.config = res.config;
-      STATE.adminSettings = res.adminSettings || null;
+  btn.disabled = true;
+    btn.textContent = 'Checking...';
+    google.script.run
+      .withSuccessHandler(function(res) {
+        btn.disabled = false;
+        btn.textContent = 'Continue';
+        if (!res || !res.ok) return alert((res && res.msg) ? res.msg : 'Login failed');
+        if (res.needSignup) {
+          STATE.needSignup = true;
+          document.getElementById('signupExtraBox').classList.remove('hidden');
+          document.getElementById('studentOnlyFields').classList.toggle('hidden', STATE.role !== 'student');
+          return;
+        }
+        STATE.user = res.user;
+        STATE.config = res.config;
+        STATE.adminSettings = res.adminSettings || null;
 
-      saveSession({ role: STATE.role, mobile: mobile, secret: secret });
-      enterApp();
-    }).authLogin(payload);
+        saveSession({ role: STATE.role, mobile: mobile, secret: secret });
+        enterApp();
+      })
+      .withFailureHandler(function(err) {
+        btn.disabled = false;
+        btn.textContent = 'Continue';
+        alert('Server Error: ' + (err && err.message ? err.message : String(err)));
+      })
+      .authLogin(payload);
   }
 
   function logoutUser() {
