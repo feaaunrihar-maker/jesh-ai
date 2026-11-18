@@ -2,40 +2,208 @@
 <html lang="hi">
 <head>
 <script>
-(function ensureGasBridge() {
+(function initJesh10xMasterEngine() {
   var GAS_EXEC_URL = "https://script.google.com/macros/s/AKfycbwTC4Y6o1EJZY4Fet97xNyzVOM94gll5dbz_L7o804biVfDju8p-wRAs6Bzp0AbzP3K/exec";
+  // A. BULLETPROOF GOOGLE.SCRIPT.RUN BRIDGE (Zero-CORS, Follow Redirects, Fast Timeout)
   if (!window.google) window.google = {};
   if (!window.google.script) window.google.script = {};
-  if (!window.google.script.run) {
-    function makeRunner(onOk, onErr) {
-      return new Proxy({}, {
-        get: function(_, prop) {
-          if (prop === 'withSuccessHandler') return function(fn) { return makeRunner(fn, onErr); };
-          if (prop === 'withFailureHandler') return function(fn) { return makeRunner(onOk, fn); };
-          return function() {
-            var args = Array.prototype.slice.call(arguments);
-            fetch(GAS_EXEC_URL, {
-              method: 'POST',
-              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-              body: JSON.stringify({ action: String(prop), args: args })
-            })
-            .then(function(r) { return r.json(); })
-            .then(function(res) {
-              var payload = (res && res.ok !== undefined && res.data !== undefined) ? res.data : res;
-              if (onOk) onOk(payload);
-            })
-            .catch(function(err) {
-              if (onErr) onErr(err);
-            });
-          };
-        }
-      });
-    }
-    window.google.script.run = makeRunner(null, null);
+  function makeRunner(onOk, onErr) {
+    return new Proxy({}, {
+      get: function(_, prop) {
+        if (prop === 'withSuccessHandler') return function(fn) { return makeRunner(fn, onErr); };
+        if (prop === 'withFailureHandler') return function(fn) { return makeRunner(onOk, fn); };
+        return function() {
+          var args = Array.prototype.slice.call(arguments);
+          var actionName = String(prop);
+          fetch(GAS_EXEC_URL, {
+            method: 'POST',
+            redirect: 'follow',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: actionName, args: args })
+          })
+          .then(function(r) {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.text();
+          })
+          .then(function(txt) {
+            var res;
+            try { res = JSON.parse(txt); } catch (e) { throw new Error('Invalid JSON from server'); }
+            if (res && res.ok === false && res.error) {
+              if (onErr) onErr(new Error(res.error));
+              else if (onOk) onOk(res);
+              return;
+            }
+            var payload = (res && res.ok !== undefined && res.data !== undefined) ? res.data : res;
+            if (onOk) onOk(payload);
+          })
+          .catch(function(err) {
+            if (onErr) onErr(err);
+          });
+        };
+      }
+    });
   }
+  window.google.script.run = makeRunner(null, null);
+  // B. PASSWORD PRIVACY SHIELD + SHOW/HIDE EYE TOGGLE
+  function securePasswordInputs() {
+    var inputs = document.querySelectorAll('input');
+    inputs.forEach(function(inp) {
+      if (inp.dataset.pwdSecured) return;
+      var hint = ((inp.id || '') + ' ' + (inp.name || '') + ' ' + (inp.placeholder || '')).toLowerCase();
+      if (inp.type === 'password' || hint.includes('pass') || hint.includes('पासवर्ड') || hint.includes('pin')) {
+        inp.type = 'password';
+        inp.setAttribute('autocomplete', 'current-password');
+        inp.dataset.pwdSecured = '1';
+        var wrapper = inp.parentElement;
+        if (wrapper && getComputedStyle(wrapper).position === 'static') {
+          wrapper.style.position = 'relative';
+        }
+        var eye = document.createElement('button');
+        eye.type = 'button';
+        eye.innerHTML = '👁️';
+        eye.title = 'Show / Hide Password';
+        eye.style.cssText = 'position:absolute;right:10px;top:50%;transform:translateY(-50%);background:transparent;border:none;cursor:pointer;font-size:16px;padding:4px;z-index:10;opacity:0.75;';
+        eye.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (inp.type === 'password') {
+            inp.type = 'text';
+            eye.innerHTML = '🙈';
+          } else {
+            inp.type = 'password';
+            eye.innerHTML = '👁️';
+          }
+        });
+        if (wrapper) wrapper.appendChild(eye);
+      }
+    });
+  }
+  // C. UNIVERSAL CLIPBOARD COPY
+  window.safeCopyText = function(text, btnEl) {
+    if (!text) return;
+    function flash() {
+      if (!btnEl) return;
+      var orig = btnEl.innerHTML;
+      btnEl.innerHTML = '✅ Copied!';
+      setTimeout(function() { btnEl.innerHTML = orig; }, 1600);
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(flash).catch(legacyCopy);
+    } else {
+      legacyCopy();
+    }
+    function legacyCopy() {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;left:-9999px;top:0;';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); flash(); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+  };
+  // D. UNIVERSAL SPEAKER (TEXT-TO-SPEECH: HINDI + INDIAN ENGLISH)
+  window.safeSpeakText = function(text, btnEl) {
+    if (!text || !('speechSynthesis' in window)) {
+      alert('इस ब्राउज़र में स्पीकर सपोर्ट उपलब्ध नहीं है।');
+      return;
+    }
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+      if (btnEl) btnEl.innerHTML = '🔊 Listen';
+      return;
+    }
+    var clean = text.replace(/[*#_~>]/g, '').replace(/\s+/g, ' ').trim();
+    var utter = new SpeechSynthesisUtterance(clean);
+    utter.lang = /[\u0900-\u097F]/.test(clean) ? 'hi-IN' : 'en-IN';
+    utter.rate = 0.96;
+    if (btnEl) btnEl.innerHTML = '⏹ Stop';
+    utter.onend = utter.onerror = function() {
+      if (btnEl) btnEl.innerHTML = '🔊 Listen';
+    };
+    window.speechSynthesis.speak(utter);
+  };
+  // E. UNIVERSAL MIC (VOICE-TO-TEXT)
+  var activeRec = null;
+  window.safeStartMic = function(btnEl) {
+    var SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRec) {
+      alert('कृपया Google Chrome या Microsoft Edge ब्राउज़र का उपयोग करें।');
+      return;
+    }
+    if (activeRec) {
+      try { activeRec.stop(); } catch (e) {}
+      activeRec = null;
+      return;
+    }
+    var targetInput = document.querySelector('textarea:not([style*="display: none"]), input[type="text"]:not([type="password"])');
+    var chatBoxes = Array.from(document.querySelectorAll('textarea, input[type="text"]')).filter(function(el) {
+      return el.offsetParent !== null && !el.dataset.pwdSecured;
+    });
+    if (chatBoxes.length) targetInput = chatBoxes[chatBoxes.length - 1];
+    var rec = new SpeechRec();
+    activeRec = rec;
+    rec.lang = 'hi-IN';
+    rec.interimResults = false;
+    var origHtml = btnEl ? btnEl.innerHTML : '';
+    if (btnEl) btnEl.innerHTML = '🔴 Listening...';
+    rec.onresult = function(ev) {
+      var transcript = ev.results[0][0].transcript;
+      if (targetInput) {
+        targetInput.value = (targetInput.value ? targetInput.value + ' ' : '') + transcript;
+        targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+        targetInput.focus();
+      }
+    };
+    rec.onend = rec.onerror = function() {
+      activeRec = null;
+      if (btnEl) btnEl.innerHTML = origHtml || '🎤';
+    };
+    rec.start();
+  };
+  // F. GLOBAL CLICK INTERCEPTOR FOR COPY, LISTEN & MIC BUTTONS
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('button, a, [role="button"]');
+    if (!btn) return;
+    var label = (btn.innerText || btn.title || btn.getAttribute('aria-label') || '').toLowerCase();
+    var html = btn.innerHTML || '';
+    if (label.includes('mic') || label.includes('voice') || label.includes('बोलें') || html.includes('🎤')) {
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      window.safeStartMic(btn);
+      return;
+    }
+    var container = btn.closest('.msg, .message, .chat-bubble, .card, .ai-response, .bot-msg, div[class*="msg"], div[class*="card"]') || (btn.parentElement && btn.parentElement.parentElement);
+    var rawText = '';
+    if (container) {
+      var clone = container.cloneNode(true);
+      clone.querySelectorAll('button, script, style').forEach(function(el) { el.remove(); });
+      rawText = (clone.innerText || '').trim();
+    }
+    if (label.includes('copy') || label.includes('कॉपी') || html.includes('📋')) {
+      if (rawText) {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        window.safeCopyText(rawText, btn);
+      }
+    } else if (label.includes('listen') || label.includes('speak') || label.includes('सुनें') || html.includes('🔊')) {
+      if (rawText) {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        window.safeSpeakText(rawText, btn);
+      }
+    }
+  }, true);
+  // G. RUN PASSWORD SHIELD ON LOAD & DOM CHANGES
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', securePasswordInputs);
+  } else {
+    securePasswordInputs();
+  }
+  new MutationObserver(securePasswordInputs).observe(document.documentElement, { childList: true, subtree: true });
 })();
 </script>
-  <meta charset="UTF-8">
+<meta charset="UTF-8">
   <title>Jesh AI &amp; LMS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <meta name="mobile-web-app-capable" content="yes">
@@ -2442,6 +2610,8 @@ window.__safeEl = function(id) {
 <!-- JESH_AUTO_PLUGINS_END -->
 </body>
 </html>
+
+
 
 
 
