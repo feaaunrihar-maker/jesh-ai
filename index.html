@@ -1,6 +1,40 @@
 ﻿<!DOCTYPE html>
 <html lang="hi">
 <head>
+<script>
+(function ensureGasBridge() {
+  var GAS_EXEC_URL = "https://script.google.com/macros/s/AKfycbwTC4Y6o1EJZY4Fet97xNyzVOM94gll5dbz_L7o804biVfDju8p-wRAs6Bzp0AbzP3K/exec";
+  if (!window.google) window.google = {};
+  if (!window.google.script) window.google.script = {};
+  if (!window.google.script.run) {
+    function makeRunner(onOk, onErr) {
+      return new Proxy({}, {
+        get: function(_, prop) {
+          if (prop === 'withSuccessHandler') return function(fn) { return makeRunner(fn, onErr); };
+          if (prop === 'withFailureHandler') return function(fn) { return makeRunner(onOk, fn); };
+          return function() {
+            var args = Array.prototype.slice.call(arguments);
+            fetch(GAS_EXEC_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify({ action: String(prop), args: args })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+              var payload = (res && res.ok !== undefined && res.data !== undefined) ? res.data : res;
+              if (onOk) onOk(payload);
+            })
+            .catch(function(err) {
+              if (onErr) onErr(err);
+            });
+          };
+        }
+      });
+    }
+    window.google.script.run = makeRunner(null, null);
+  }
+})();
+</script>
   <meta charset="UTF-8">
   <title>Jesh AI &amp; LMS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
@@ -2408,6 +2442,7 @@ window.__safeEl = function(id) {
 <!-- JESH_AUTO_PLUGINS_END -->
 </body>
 </html>
+
 
 
 
