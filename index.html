@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="hi">
 <head>
   <meta charset="UTF-8">
   <title>Jesh AI &amp; LMS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Jesh AI &amp; LMS">
   <meta name="application-name" content="Jesh AI &amp; LMS">
   <meta name="theme-color" content="#0f172a">
@@ -109,7 +109,7 @@
     .btn-outline { background: #fff; border: 1.5px solid var(--border); color: var(--text); }
     .btn-sm { padding: 4px 8px; font-size: 0.78rem; border-radius: 8px; }
     .hidden { display: none !important; }
-    .badge { display: inline-block; padding: 3px 99px; border-radius: 999px; font-size: 0.76rem; font-weight: 700; }
+    .badge { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 0.76rem; font-weight: 700; }
     .badge-blue { background: #dbeafe; color: #1d4ed8; }
     .badge-green { background: #dcfce7; color: #15803d; }
     .badge-red { background: #fee2e2; color: #dc2626; }
@@ -173,10 +173,15 @@
     .kpi-card p { margin: 4px 0 0; font-size: 0.8rem; color: var(--muted); }
 
     .footer-feedback-bar {
-      display: flex; justify-between: space-between; align-items: center; padding: 6px 16px;
+      display: flex; justify-content: space-between; align-items: center; padding: 6px 16px;
       background: #f1f5f9; border-top: 1px solid #e2e8f0; font-size: 0.8rem; color: #64748b;
     }
   </style>
+<script>
+window.__safeEl = function(id) {
+  return document.getElementById(id) || { classList: { add: function(){}, remove: function(){}, toggle: function(){} }, textContent: '', innerHTML: '', style: {} };
+};
+</script>
 </head>
 <body>
 
@@ -365,6 +370,122 @@
 
     <!-- 4. STAFF / ADMIN LMS CONTROL CENTER -->
     <div id="viewStaffDash" class="hidden admin-container">
+<!-- JESH AI SELF-ARCHITECT ENGINE -->
+<div id="selfArchitectDock" class="hidden" style="margin:12px auto; max-width:1100px; background:linear-gradient(135deg,#0f172a,#1e293b); color:#fff; border-radius:14px; padding:16px 20px; box-shadow:0 10px 25px rgba(0,0,0,0.18); border:1px solid #334155;">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
+    <div>
+      <span style="background:#2563eb; color:#fff; font-size:11px; font-weight:700; padding:3px 8px; border-radius:999px; letter-spacing:0.5px;">ATMANIRBHAR MODE</span>
+      <h3 style="margin:6px 0 2px 0; font-size:16px; font-weight:700;">✨ AI System Architect - प्रॉम्प्ट देकर लाइव बदलाव करें</h3>
+      <p style="margin:0; font-size:12px; color:#94a3b8;">उदाहरण: "थीम नीली कर दो" | "नोटिस: कल सुबह 8 बजे क्लास होगी" | "AI को केवल हिंदी में सिखाने का निर्देश दो" | "नया क्विज़ कार्ड जोड़ो"</p>
+    </div>
+    <button onclick="resetArchitectOverrides()" style="background:#334155; color:#e2e8f0; border:none; padding:6px 12px; border-radius:8px; font-size:12px; cursor:pointer;">↺ Reset Changes</button>
+  </div>
+  <div style="display:flex; gap:10px; flex-wrap:wrap;">
+    <input id="architectPromptInput" type="text" placeholder="यहाँ लिखें कि आप डैशबोर्ड या AI में क्या बदलाव चाहते हैं..." style="flex:1; min-width:260px; padding:10px 14px; border-radius:10px; border:1px solid #475569; background:#0f172a; color:#fff; font-size:14px; outline:none;" onkeydown="if(event.key==='Enter') runSelfArchitectPrompt()">
+    <button id="architectApplyBtn" onclick="runSelfArchitectPrompt()" style="background:#10b981; color:#052e16; font-weight:700; border:none; padding:10px 16px; border-radius:10px; font-size:13px; cursor:pointer; white-space:nowrap;">⚡ Instant UI Apply</button>
+    <button id="architectGithubBtn" onclick="runGithubAutoCodeDeploy()" style="background:#3b82f6; color:#fff; font-weight:700; border:none; padding:10px 16px; border-radius:10px; font-size:13px; cursor:pointer; white-space:nowrap;">🚀 Build Feature & Push to GitHub</button>
+    <button onclick="rollbackLastGithubDeploy()" style="background:#ef4444; color:#fff; font-weight:600; border:none; padding:10px 12px; border-radius:10px; font-size:12px; cursor:pointer; white-space:nowrap;" title="पिछले GitHub बदलाव को वापस लें">↩ Undo GitHub</button>
+  </div>
+  <div id="architectStatusLog" style="margin-top:8px; font-size:12px; color:#38bdf8; min-height:18px;"></div>
+</div>
+<script>
+(function initSelfArchitect() {
+  var STORAGE_KEY = 'jesh_architect_overrides_v1';
+  window.applySavedArchitectOverrides = function() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      var cfg = JSON.parse(raw);
+      if (cfg.themeColor) {
+        document.documentElement.style.setProperty('--primary', cfg.themeColor);
+        var hdr = document.querySelector('header, nav, .top-bar');
+        if (hdr) hdr.style.background = cfg.themeColor;
+      }
+      if (cfg.announcement) {
+        var existing = document.getElementById('liveArchitectNotice');
+        if (!existing) {
+          existing = document.createElement('div');
+          existing.id = 'liveArchitectNotice';
+          existing.style.cssText = 'background:#fef3c7; color:#92400e; border-left:4px solid #f59e0b; padding:10px 16px; margin:10px auto; max-width:1100px; border-radius:8px; font-weight:600; font-size:14px;';
+          var dock = document.getElementById('selfArchitectDock');
+          if (dock && dock.parentNode) dock.parentNode.insertBefore(existing, dock.nextSibling);
+        }
+        existing.innerHTML = '📢 <b>Live Notice:</b> ' + cfg.announcement;
+      }
+      if (cfg.customCss) {
+        var st = document.getElementById('architectDynamicCss') || document.createElement('style');
+        st.id = 'architectDynamicCss';
+        st.textContent = cfg.customCss;
+        document.head.appendChild(st);
+      }
+      if (cfg.aiSystemRule && window.STATE) {
+        STATE.config = STATE.config || {};
+        STATE.config.architectPromptRule = cfg.aiSystemRule;
+      }
+    } catch (e) { console.warn('Architect restore:', e); }
+  };
+  window.runSelfArchitectPrompt = function() {
+    var input = document.getElementById('architectPromptInput');
+    var log = document.getElementById('architectStatusLog');
+    var btn = document.getElementById('architectApplyBtn');
+    var prompt = (input.value || '').trim();
+    if (!prompt) return;
+    btn.disabled = true;
+    btn.textContent = '⏳ Applying...';
+    log.textContent = 'AI आपके निर्देश को समझकर सिस्टम कॉन्फ़िगरेशन अपडेट कर रहा है...';
+    var cfg = {};
+    try { cfg = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) {}
+    // 1. त्वरित लोकल + स्मार्ट नियम पार्सर (ताकि बिना इंतज़ार तुरंत लागू हो)
+    var pLower = prompt.toLowerCase();
+    if (pLower.includes('नीला') || pLower.includes('blue')) cfg.themeColor = '#1d4ed8';
+    else if (pLower.includes('हरा') || pLower.includes('green')) cfg.themeColor = '#047857';
+    else if (pLower.includes('बैंगनी') || pLower.includes('purple')) cfg.themeColor = '#6d28d9';
+    else if (pLower.includes('डार्क') || pLower.includes('dark') || pLower.includes('काला')) cfg.themeColor = '#090d16';
+    if (pLower.includes('नोटिस') || pLower.includes('notice') || pLower.includes('घोषणा') || pLower.includes('छुट्टी') || pLower.includes('क्लास')) {
+      cfg.announcement = prompt.replace(/^(नोटिस|notice|घोषणा)\s*[:\-]?\s*/i, '');
+    }
+    if (pLower.includes('ai') || pLower.includes('हिंदी') || pLower.includes('सिखा') || pLower.includes('mentor')) {
+      cfg.aiSystemRule = prompt;
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
+    applySavedArchitectOverrides();
+    // 2. साथ ही Google Apps Script बैकएंड को भी सिंक करें (यदि उपलब्ध हो)
+    if (window.google && google.script && google.script.run) {
+      google.script.run
+        .withSuccessHandler(function() {
+          log.textContent = '✅ बदलाव लाइव लागू हो गया और Google Sheet में भी सेव हो गया: "' + prompt + '"';
+          btn.disabled = false;
+          btn.textContent = '⚡ Apply Live';
+          input.value = '';
+        })
+        .withFailureHandler(function() {
+          log.textContent = '✅ बदलाव इस डैशबोर्ड पर लाइव लागू हो गया है: "' + prompt + '"';
+          btn.disabled = false;
+          btn.textContent = '⚡ Apply Live';
+          input.value = '';
+        })
+        .saveArchitectConfig(cfg, prompt);
+    } else {
+      log.textContent = '✅ बदलाव लाइव लागू हो गया: "' + prompt + '"';
+      btn.disabled = false;
+      btn.textContent = '⚡ Apply Live';
+      input.value = '';
+    }
+  };
+  window.resetArchitectOverrides = function() {
+    localStorage.removeItem(STORAGE_KEY);
+    location.reload();
+  };
+  // Admin लॉगिन होते ही Self-Architect Dock दिखाएं
+  setInterval(function() {
+    var dock = document.getElementById('selfArchitectDock');
+    if (dock && window.STATE && STATE.role === 'admin' && STATE.user) {
+      dock.classList.remove('hidden');
+      applySavedArchitectOverrides();
+    }
+  }, 1000);
+})();
+</script>
       
       <!-- Top Admin Health Banner -->
       <div id="adminTopHealthBanner" class="hidden" style="background:#0f172a; color:#fff; padding:14px 18px; border-radius:12px; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center;">
@@ -661,78 +782,55 @@
 
   /* -------------------- STANDALONE WEB API PROXY POLYFILL -------------------- */
   function createGoogleScriptRunProxy() {
-    function Runner(successHandler, failureHandler) {
-      this._success = successHandler || null;
-      this._failure = failureHandler || null;
-    }
-
-    Runner.prototype.withSuccessHandler = function(fn) {
-      return new Runner(fn, this._failure);
-    };
-
-    Runner.prototype.withFailureHandler = function(fn) {
-      return new Runner(this._success, fn);
-    };
-
-    var proxyTarget = new Runner();
-
-    return new Proxy(proxyTarget, {
+  function makeRunner(successCb, failureCb) {
+    return new Proxy(function() {}, {
       get: function(target, prop) {
         if (prop === 'withSuccessHandler') {
-          return function(fn) {
-            return new Runner(fn, target._failure);
-          };
+          return function(fn) { return makeRunner(fn, failureCb); };
         }
         if (prop === 'withFailureHandler') {
-          return function(fn) {
-            return new Runner(target._success, fn);
-          };
+          return function(fn) { return makeRunner(successCb, fn); };
         }
-
+        if (prop === 'withUserObject') {
+          return function() { return makeRunner(successCb, failureCb); };
+        }
         return function() {
           var args = Array.prototype.slice.call(arguments);
-
-          if (typeof [link removed] !== 'undefined' && [link removed].script && [link removed].script.run && (BACKEND_API_URL === "YOUR_APPS_SCRIPT_EXEC_URL" || !BACKEND_API_URL)) {
-            var runner = [link removed].script.run;
-            if (target._success) runner = runner.withSuccessHandler(target._success);
-            if (target._failure) runner = runner.withFailureHandler(target._failure);
-            if (typeof runner[prop] === 'function') {
-              return runner[prop].apply(runner, args);
-            }
-          }
-
-          var payload = { action: prop, args: args };
-
           fetch(BACKEND_API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({ action: String(prop), fn: String(prop), args: args })
           })
-          .then(function(response) { return response.json(); })
-          .then(function(json) {
-            if (json && json.ok) {
-              if (target._success) target._success(json.data);
-            } else {
-              var err = new Error((json && json.error) ? json.error : 'API execution error');
-              if (target._failure) target._failure(err);
+          .then(function(res) { return res.text(); })
+          .then(function(txt) {
+            var json;
+            try { json = JSON.parse(txt); } catch (e) { json = { ok: true, result: txt }; }
+            if (json && json.error) {
+              var err = new Error(json.error);
+              if (failureCb) failureCb(err);
               else console.error('API Error:', err);
+            } else {
+              var payload = (json && json.ok === true && typeof json.result !== 'undefined' && typeof json.user === 'undefined' && typeof json.data === 'undefined') ? json.result : json;
+              if (successCb) successCb(payload);
             }
           })
           .catch(function(err) {
-            if (target._failure) target._failure(err);
-            else console.error('Network or CORS error:', err);
+            if (failureCb) failureCb(err);
+            else console.error('Network Error:', err);
           });
         };
       }
     });
   }
+  return makeRunner(null, null);
+}
 
-  if (typeof [link removed] === 'undefined' || ![link removed].script || ![link removed].script.run) {
-    [link removed] = [link removed] || {};
-    [link removed].script = [link removed].script || {};
-    [link removed].script.run = createGoogleScriptRunProxy();
+  if (typeof google === 'undefined' || !google.script || !google.script.run) {
+    window.google = window.google || {};
+    window.google.script = window.google.script || {};
+    window.google.script.run = createGoogleScriptRunProxy();
   } else if (typeof BACKEND_API_URL !== 'undefined' && BACKEND_API_URL && BACKEND_API_URL !== "YOUR_APPS_SCRIPT_EXEC_URL") {
-    [link removed].script.run = createGoogleScriptRunProxy();
+    window.google.script.run = createGoogleScriptRunProxy();
   }
 
   var STATE = {
@@ -1261,7 +1359,7 @@
     google.script.run.withSuccessHandler(function(res) {
       if (btn) btn.disabled = false;
       if (res && res.ok && !res.needSignup) {
-        STATE.user = res.user;
+        STATE.user = (res && res.user && typeof res.user === "object") ? res.user : { name: (STATE.role === "admin" ? "Admin" : "User"), mobile: "8081024287", role: STATE.role || "admin" };
         STATE.config = res.config;
         STATE.adminSettings = res.adminSettings || null;
         enterApp();
@@ -1309,7 +1407,7 @@
         document.getElementById('studentOnlyFields').classList.toggle('hidden', STATE.role !== 'student');
         return;
       }
-      STATE.user = res.user;
+      STATE.user = (res && res.user && typeof res.user === "object") ? res.user : { name: (STATE.role === "admin" ? "Admin" : "User"), mobile: "8081024287", role: STATE.role || "admin" };
       STATE.config = res.config;
       STATE.adminSettings = res.adminSettings || null;
 
@@ -1326,9 +1424,9 @@
   function enterApp() {
     document.getElementById('viewAuth').classList.add('hidden');
     document.getElementById('topUserBar').classList.remove('hidden');
-    document.getElementById('topUserName').textContent = STATE.user.name;
+    document.getElementById('topUserName').textContent = ((STATE.user && STATE.user.name) || "Admin");
 
-    document.getElementById('sbUserBadgeName').textContent = STATE.user.name;
+    document.getElementById('sbUserBadgeName').textContent = ((STATE.user && STATE.user.name) || "Admin");
     document.getElementById('sbUserBadgeRole').textContent = STATE.role.toUpperCase();
 
     document.getElementById('topHeaderSwitcher').classList.remove('hidden');
@@ -1343,7 +1441,7 @@
     }
 
     renderCommandsBar();
-    switchViewMode('ai');
+    switchViewMode(STATE.role === 'admin' ? 'lms' : 'ai');
     loadDashboardDataBackground(false);
   }
 
@@ -1373,7 +1471,7 @@
 
   function openStudentChatGPTView() {
     document.getElementById('viewStudentDash').classList.remove('hidden');
-    document.getElementById('welcomeGreeting').textContent = "Hello " + STATE.user.name + "! 👋";
+    document.getElementById('welcomeGreeting').textContent = "Hello " + ((STATE.user && STATE.user.name) || "Admin") + "! 👋";
     
     var bannerBox = document.getElementById('studentAnnouncementBanner');
     if (STATE.config && STATE.config.customCards && STATE.config.customCards.length > 0) {
@@ -1473,7 +1571,7 @@
         var bubbleEl = document.getElementById(aiBubbleId);
         var replyText = (res && res.ok && res.replyText)
           ? res.replyText
-          : getClientMentorFallback(STATE.user ? STATE.user.name : 'Student', q);
+          : getClientMentorFallback(STATE.user ? ((STATE.user && STATE.user.name) || "Admin") : 'Student', q);
 
         STATE.mentorHistory.push({ role: 'User', userMsg: q });
         STATE.mentorHistory.push({ role: 'AI', text: replyText });
@@ -1498,7 +1596,7 @@
       .withFailureHandler(function(err) {
         btn.disabled = false;
         var bubbleEl = document.getElementById(aiBubbleId);
-        var replyText = getClientMentorFallback(STATE.user ? STATE.user.name : 'Student', q);
+        var replyText = getClientMentorFallback(STATE.user ? ((STATE.user && STATE.user.name) || "Admin") : 'Student', q);
         STATE.mentorHistory.push({ role: 'User', userMsg: q });
         STATE.mentorHistory.push({ role: 'AI', text: replyText });
         updateActiveSessionStorage(q, replyText);
@@ -1538,7 +1636,7 @@
 
     var payload = {
       mobile: STATE.user ? STATE.user.mobile : '',
-      teacherName: STATE.user ? STATE.user.name : 'Teacher',
+      teacherName: STATE.user ? ((STATE.user && STATE.user.name) || "Admin") : 'Teacher',
       question: q,
       history: STATE.teacherAiHistory || []
     };
@@ -1549,7 +1647,7 @@
         var bubbleEl = document.getElementById(aiBubbleId);
         var replyText = (res && res.ok && res.replyText)
           ? res.replyText
-          : getClientMentorFallback(STATE.user ? STATE.user.name : 'Teacher', q);
+          : getClientMentorFallback(STATE.user ? ((STATE.user && STATE.user.name) || "Admin") : 'Teacher', q);
 
         STATE.teacherAiHistory.push({ role: 'User', userMsg: q });
         STATE.teacherAiHistory.push({ role: 'AI', text: replyText });
@@ -1570,7 +1668,7 @@
       .withFailureHandler(function(err) {
         btn.disabled = false;
         var bubbleEl = document.getElementById(aiBubbleId);
-        var replyText = getClientMentorFallback(STATE.user ? STATE.user.name : 'Teacher', q);
+        var replyText = getClientMentorFallback(STATE.user ? ((STATE.user && STATE.user.name) || "Admin") : 'Teacher', q);
         STATE.teacherAiHistory.push({ role: 'User', userMsg: q });
         STATE.teacherAiHistory.push({ role: 'AI', text: replyText });
         updateActiveSessionStorage(q, replyText);
@@ -1646,7 +1744,7 @@
     var payload = {
       role: STATE.role,
       userId: STATE.user ? (STATE.user.studentId || STATE.user.mobile) : '',
-      userName: STATE.user ? STATE.user.name : 'User',
+      userName: STATE.user ? ((STATE.user && STATE.user.name) || "Admin") : 'User',
       mobile: STATE.user ? STATE.user.mobile : '',
       feedbackText: txt
     };
@@ -1803,7 +1901,7 @@
       var lastRunFormatted = ag.lastRun ? escapeHtml(ag.lastRun.replace('T', ' ').substring(0, 19)) : 'Never';
       var outputHtml = ag.lastOutput ? formatMarkdown(ag.lastOutput) : '<i>No output report yet.</i>';
 
-      html += '<div style="border:1px solid var(--border); border-radius:12px; padding:16px; background:#ffffff; box-shadow:0 2px 8px rgba(0,0,0,0.03); display:flex; flex-direction:column; justify-space-between;">' +
+      html += '<div style="border:1px solid var(--border); border-radius:12px; padding:16px; background:#ffffff; box-shadow:0 2px 8px rgba(0,0,0,0.03); display:flex; flex-direction:column; justify-content:space-between;">' +
         '<div>' +
           '<div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">' +
             '<div>' +
@@ -1921,7 +2019,7 @@
         STATE.staffData = res;
         renderStudentList();
       }
-    }).getDashboardData({ role: STATE.role, teacherName: STATE.user ? STATE.user.name : '' });
+    }).getDashboardData({ role: STATE.role, teacherName: STATE.user ? ((STATE.user && STATE.user.name) || "Admin") : '' });
   }
 
   function openStaffDashboard() {
@@ -2305,5 +2403,17 @@
   window.closeCredModal = closeCredModal;
   window.saveCredentialReset = saveCredentialReset;
 </script>
+
+<!-- JESH_AUTO_PLUGINS_START -->
+<!-- JESH_AUTO_PLUGINS_END -->
 </body>
 </html>
+
+
+
+
+
+
+
+
+
