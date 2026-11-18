@@ -782,7 +782,7 @@
             var args = Array.prototype.slice.call(arguments);
             var payload = { action: prop, args: args };
             var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
-            var timeoutId = controller ? setTimeout(function() { controller.abort(); }, 25000) : null;
+            var timeoutId = controller ? setTimeout(function() { controller.abort(); }, 55000) : null;
 
             fetch(BACKEND_API_URL, {
               method: 'POST',
